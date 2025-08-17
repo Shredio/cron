@@ -17,7 +17,6 @@ final readonly class AsCronJob
 		public string $name,
 		Schedule|string|CronExpression $schedule,
 		public ?CronOptions $options = null,
-		public ?string $memoryRequest = null,
 		public bool $spotInstance = false,
 	)
 	{

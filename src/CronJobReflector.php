@@ -4,10 +4,10 @@ namespace Shredio\Cron;
 
 use ReflectionClass;
 use Shredio\Cron\Attribute\AsCronJob;
+use Shredio\Cron\Attribute\MemoryLimit;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
 
-final readonly class CronJobExtractor
+final readonly class CronJobReflector
 {
 
 	/**
@@ -26,7 +26,7 @@ final readonly class CronJobExtractor
 	}
 
 	/**
-	 * @param ReflectionClass<object> $reflectionClass
+	 * @param ReflectionClass<covariant object> $reflectionClass
 	 */
 	public static function extractCommand(ReflectionClass $reflectionClass): ?string
 	{
@@ -36,13 +36,21 @@ final readonly class CronJobExtractor
 	}
 
 	/**
-	 * @param ReflectionClass<object> $reflectionClass
+	 * @param ReflectionClass<covariant object> $reflectionClass
 	 */
 	public static function extractDescription(ReflectionClass $reflectionClass): ?string
 	{
 		$attribute = ($reflectionClass->getAttributes(AsCommand::class)[0] ?? null)?->newInstance();
 
 		return $attribute?->description;
+	}
+
+	/**
+	 * @param ReflectionClass<covariant object> $reflectionClass
+	 */
+	public static function extractMemoryLimit(ReflectionClass $reflectionClass): ?MemoryLimit
+	{
+		return ($reflectionClass->getAttributes(MemoryLimit::class)[0] ?? null)?->newInstance();
 	}
 
 }

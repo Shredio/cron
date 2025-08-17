@@ -4,7 +4,7 @@ namespace Shredio\Cron\Symfony;
 
 use ReflectionClass;
 use Shredio\Cron\Attribute\AsCronJob;
-use Shredio\Cron\CronJobExtractor;
+use Shredio\Cron\CronJobReflector;
 use Shredio\Cron\CronJobProvider;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -18,7 +18,7 @@ final class CronListCommand extends Command
 {
 
 	public function __construct(
-		private readonly CronJobProvider $cronJobProvider,
+		private readonly ?CronJobProvider $cronJobProvider,
 	)
 	{
 		parent::__construct();
@@ -32,10 +32,16 @@ final class CronListCommand extends Command
 
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
+		$cronJobProvider = $this->cronJobProvider;
+		if ($cronJobProvider === null) {
+			$output->writeln('<error>No cron job provider configured.</error>');
+			return Command::FAILURE;
+		}
+
 		$table = new Table($output);
 		$table->setHeaders(['Name', 'Schedule', 'Class', 'Command', 'Memory', 'Spot', 'Description']);
 
-		$cronJobs = $this->cronJobProvider->provide();
+		$cronJobs = $cronJobProvider->provide();
 		/**
 		 * @var AsCronJob $cronJob
 		 * @var ReflectionClass<object> $reflectionClass
@@ -51,20 +57,21 @@ final class CronListCommand extends Command
 				}
 			}
 
-			$command = CronJobExtractor::extractCommand($reflectionClass);
-			$description = CronJobExtractor::extractDescription($reflectionClass);
+			$command = CronJobReflector::extractCommand($reflectionClass);
+			$description = CronJobReflector::extractDescription($reflectionClass);
+			$memoryLimit = CronJobReflector::extractMemoryLimit($reflectionClass)?->toStringOrNull();
 			
 			$displayDescription = $description ?? '-';
 			if ($description !== null && !$input->getOption('full-description') && strlen($description) > 60) {
 				$displayDescription = substr($description, 0, 60) . '...';
 			}
-			
+
 			$table->addRow([
 				$cronJob->name,
 				$cronJob->schedule->getExpression(),
 				$displayClassName,
 				$command ?? '-',
-				$cronJob->memoryRequest ?? '-',
+				$memoryLimit ?? '-',
 				$cronJob->spotInstance ? '✓' : '✗',
 				$displayDescription,
 			]);
