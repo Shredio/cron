@@ -3,7 +3,7 @@
 namespace Shredio\Cron\Symfony;
 
 use ReflectionClass;
-use Shredio\Cron\Attribute\CronJob;
+use Shredio\Cron\Attribute\AsCronJob;
 use Shredio\Cron\CronJobExtractor;
 use Shredio\Cron\CronJobProvider;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -37,7 +37,7 @@ final class CronListCommand extends Command
 
 		$cronJobs = $this->cronJobProvider->provide();
 		/**
-		 * @var CronJob $cronJob
+		 * @var AsCronJob $cronJob
 		 * @var ReflectionClass<object> $reflectionClass
 		 */
 		foreach ($cronJobs as $cronJob => $reflectionClass) {

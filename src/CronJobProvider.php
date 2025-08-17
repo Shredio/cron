@@ -3,13 +3,13 @@
 namespace Shredio\Cron;
 
 use ReflectionClass;
-use Shredio\Cron\Attribute\CronJob;
+use Shredio\Cron\Attribute\AsCronJob;
 
 interface CronJobProvider
 {
 
 	/**
-	 * @return iterable<CronJob, ReflectionClass<object>>
+	 * @return iterable<AsCronJob, ReflectionClass<object>>
 	 */
 	public function provide(): iterable;
 

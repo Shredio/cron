@@ -8,7 +8,7 @@ use Shredio\Cron\CronOptions;
 use Shredio\Cron\Schedule;
 
 #[Attribute(Attribute::TARGET_CLASS | Attribute::IS_REPEATABLE)]
-final readonly class CronJob
+final readonly class AsCronJob
 {
 
 	public Schedule $schedule;

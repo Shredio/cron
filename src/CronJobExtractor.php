@@ -3,7 +3,7 @@
 namespace Shredio\Cron;
 
 use ReflectionClass;
-use Shredio\Cron\Attribute\CronJob;
+use Shredio\Cron\Attribute\AsCronJob;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 
@@ -12,14 +12,14 @@ final readonly class CronJobExtractor
 
 	/**
 	 * @param iterable<object|class-string> $classes
-	 * @return iterable<CronJob, ReflectionClass<object>>
+	 * @return iterable<AsCronJob, ReflectionClass<object>>
 	 */
 	public static function extract(iterable $classes): iterable
 	{
 		foreach ($classes as $class) {
 			$reflection = new ReflectionClass($class);
 
-			foreach ($reflection->getAttributes(CronJob::class) as $attribute) {
+			foreach ($reflection->getAttributes(AsCronJob::class) as $attribute) {
 				yield $attribute->newInstance() => $reflection;
 			}
 		}
