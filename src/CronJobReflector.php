@@ -31,8 +31,17 @@ final readonly class CronJobReflector
 	public static function extractCommand(ReflectionClass $reflectionClass): ?string
 	{
 		$attribute = ($reflectionClass->getAttributes(AsCommand::class)[0] ?? null)?->newInstance();
+		$name = $attribute?->name;
+		if ($name === null) {
+			return null;
+		}
 
-		return $attribute?->name;
+		$pos = strpos($name, '|');
+		if ($pos !== false) {
+			$name = substr($name, 0, $pos);
+		}
+
+		return $name;
 	}
 
 	/**
