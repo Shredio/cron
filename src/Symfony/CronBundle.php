@@ -10,7 +10,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 final class CronBundle extends AbstractBundle implements CompilerPassInterface
@@ -23,13 +22,10 @@ final class CronBundle extends AbstractBundle implements CompilerPassInterface
 	{
 		$services = $container->services();
 
-		$services->set('cron.memory_setter', ConsoleMemorySetter::class)
-			->args([[]]);
 		$services->set(CronListCommand::class)
 			->tag('console.command')
 			->autowire();
 		$services->set(ConsoleMemorySubscriber::class)
-			->args([new Reference('cron.memory_setter')])
 			->tag('kernel.event_subscriber');
 	}
 
