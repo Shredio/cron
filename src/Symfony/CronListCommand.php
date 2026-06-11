@@ -66,9 +66,15 @@ final class CronListCommand extends Command
 				$displayDescription = substr($description, 0, 60) . '...';
 			}
 
+			$schedule = $cronJob->schedule;
+			$timezoneName = $schedule->timezone->getName();
+			$displaySchedule = $timezoneName === 'UTC'
+				? $schedule->getExpression()
+				: sprintf('%s (%s)', $schedule->getExpression(), $timezoneName);
+
 			$table->addRow([
 				$cronJob->name,
-				$cronJob->schedule->getExpression(),
+				$displaySchedule,
 				$displayClassName,
 				$command ?? '-',
 				$memoryLimit ?? '-',

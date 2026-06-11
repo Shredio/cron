@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use DateTimeZone;
 use InvalidArgumentException;
 use Shredio\Cron\ConcurrencyPolicy;
 use Shredio\Cron\KubernetesCronJobBuilder;
@@ -119,6 +120,7 @@ final class KubernetesCronJobBuilderTest extends TestCase
 			],
 			'spec' => [
 				'schedule' => '50 1 * * *',
+				'timeZone' => 'UTC',
 				'jobTemplate' => [
 					'spec' => [
 						'template' => [
@@ -715,9 +717,88 @@ final class KubernetesCronJobBuilderTest extends TestCase
 		$cronJobArray = $cronJob->toArray();
 
 		$templateSpec = $cronJobArray['spec']['jobTemplate']['spec']['template']['spec'];
-		
+
 		$this->assertArrayNotHasKey('nodeSelector', $templateSpec);
 		$this->assertArrayNotHasKey('terminationGracePeriodSeconds', $templateSpec);
+	}
+
+	public function testTimezoneDefaultsToUtc(): void
+	{
+		$schedule = new Schedule('0', '0', '*', '*', '*');
+
+		$this->assertSame('UTC', $schedule->timezone->getName());
+	}
+
+	public function testTimezoneToArray(): void
+	{
+		$schedule = new Schedule('0', '12', '*', '*', '*', new DateTimeZone('Europe/Prague'));
+		$builder = new KubernetesCronJobBuilder();
+
+		$cronJob = $builder
+			->setName('test-timezone')
+			->setSchedule($schedule)
+			->setContainerName('app')
+			->setContainerImage('app:latest')
+			->setContainerCommand(['command'])
+			->build();
+
+		$cronJobArray = $cronJob->toArray();
+
+		$this->assertSame('Europe/Prague', $cronJobArray['spec']['timeZone']);
+	}
+
+	public function testScheduleFromAppliesTimezone(): void
+	{
+		$schedule = Schedule::from('0 12 * * *', new DateTimeZone('Europe/Prague'));
+
+		$this->assertSame('Europe/Prague', $schedule->timezone->getName());
+		$this->assertSame('0 12 * * *', $schedule->getExpression());
+	}
+
+	public function testScheduleFromOverridesTimezoneOfScheduleInstance(): void
+	{
+		$original = new Schedule('0', '9', '*', '*', '*');
+
+		$result = Schedule::from($original, new DateTimeZone('America/New_York'));
+
+		$this->assertNotSame($original, $result);
+		$this->assertSame('America/New_York', $result->timezone->getName());
+		$this->assertSame($original->getExpression(), $result->getExpression());
+	}
+
+	public function testScheduleFromKeepsScheduleInstanceWhenTimezoneMatches(): void
+	{
+		$original = new Schedule('0', '9', '*', '*', '*', new DateTimeZone('America/New_York'));
+
+		$this->assertSame($original, Schedule::from($original, new DateTimeZone('America/New_York')));
+	}
+
+	public function testScheduleFromKeepsScheduleInstanceWhenTimezoneIsNull(): void
+	{
+		$original = new Schedule('0', '9', '*', '*', '*', new DateTimeZone('America/New_York'));
+
+		$this->assertSame($original, Schedule::from($original));
+	}
+
+	public function testCombinePreservesTimezone(): void
+	{
+		$first = new Schedule('30', '*', '*', '*', '*', new DateTimeZone('Europe/Prague'));
+		$second = new Schedule('*', '12', '*', '*', '*', new DateTimeZone('Europe/Prague'));
+
+		$combined = $first->combine($second);
+
+		$this->assertSame('Europe/Prague', $combined->timezone->getName());
+		$this->assertSame('30 12 * * *', $combined->getExpression());
+	}
+
+	public function testCombineRejectsDifferentTimezones(): void
+	{
+		$first = new Schedule('30', '*', '*', '*', '*', new DateTimeZone('Europe/Prague'));
+		$second = new Schedule('*', '12', '*', '*', '*', new DateTimeZone('UTC'));
+
+		$this->expectException(InvalidArgumentException::class);
+
+		$first->combine($second);
 	}
 
 }

@@ -32,6 +32,7 @@ final readonly class KubernetesCronJob
 			],
 			'spec' => [
 				'schedule' => $this->schedule->getExpression(),
+				'timeZone' => $this->schedule->timezone->getName(),
 				'jobTemplate' => [
 					'spec' => [
 						'template' => [

@@ -3,6 +3,7 @@
 namespace Shredio\Cron\Attribute;
 
 use Attribute;
+use DateTimeZone;
 use Shredio\Cron\CronExpression;
 use Shredio\Cron\CronOptions;
 use Shredio\Cron\Schedule;
@@ -18,9 +19,10 @@ final readonly class AsCronJob
 		Schedule|string|CronExpression $schedule,
 		public ?CronOptions $options = null,
 		public bool $spotInstance = false,
+		?DateTimeZone $timezone = null,
 	)
 	{
-		$this->schedule = Schedule::from($schedule);
+		$this->schedule = Schedule::from($schedule, $timezone);
 	}
 
 }

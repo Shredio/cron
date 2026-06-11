@@ -21,14 +21,18 @@ final readonly class Schedule
 
 	private CronExpression $expression;
 
+	public DateTimeZone $timezone;
+
 	public function __construct(
 		public string $minute = '*',
 		public string $hour = '*',
 		public string $day = '*',
 		public string $month = '*',
 		public string $dayOfWeek = '*',
+		?DateTimeZone $timezone = null,
 	)
 	{
+		$this->timezone = $timezone ?? new DateTimeZone('UTC');
 		$this->expression = new CronExpression(sprintf(
 			'%s %s %s %s %s',
 			$minute,
@@ -36,13 +40,17 @@ final readonly class Schedule
 			$day,
 			$month,
 			$dayOfWeek
-		), new DateTimeZone('UTC'));
+		), $this->timezone);
 	}
 
-	public static function from(Schedule|string|\Shredio\Cron\CronExpression $schedule): Schedule
+	public static function from(Schedule|string|\Shredio\Cron\CronExpression $schedule, ?DateTimeZone $timezone = null): Schedule
 	{
 		if ($schedule instanceof Schedule) {
-			return $schedule;
+			if ($timezone === null || $timezone->getName() === $schedule->timezone->getName()) {
+				return $schedule;
+			}
+
+			return new Schedule($schedule->minute, $schedule->hour, $schedule->day, $schedule->month, $schedule->dayOfWeek, $timezone);
 		}
 
 		if ($schedule instanceof \Shredio\Cron\CronExpression) {
@@ -57,10 +65,10 @@ final readonly class Schedule
 			));
 		}
 
-		return new Schedule(...$parts);
+		return new Schedule(...$parts, timezone: $timezone);
 	}
 
-	public static function fromExpression(string $expression): self
+	public static function fromExpression(string $expression, ?DateTimeZone $timezone = null): self
 	{
 		$parts = explode(' ', $expression);
 		if (count($parts) !== 5) {
@@ -70,7 +78,7 @@ final readonly class Schedule
 			));
 		}
 
-		return new self(...$parts);
+		return new self(...$parts, timezone: $timezone);
 	}
 
 	public function getExpression(): string
@@ -92,7 +100,8 @@ final readonly class Schedule
 
 	/**
 	 * Returns the next scheduled time as a DateTimeImmutable object.
-	 * If there is no next scheduled time, returns null. TimeZone is set to UTC.
+	 * If there is no next scheduled time, returns null. The returned time is in UTC,
+	 * but the schedule is evaluated against the configured timezone.
 	 */
 	public function getNext(): ?DateTimeImmutable
 	{
@@ -106,6 +115,14 @@ final readonly class Schedule
 
 	public function combine(Schedule $other): Schedule
 	{
+		if ($this->timezone->getName() !== $other->timezone->getName()) {
+			throw new InvalidArgumentException(sprintf(
+				'Cannot combine schedules: timezones "%s" and "%s" are incompatible.',
+				$this->timezone->getName(),
+				$other->timezone->getName(),
+			));
+		}
+
 		$minute = $this->combinePart($this->minute, $other->minute);
 		$hour = $this->combinePart($this->hour, $other->hour);
 		$day = $this->combinePart($this->day, $other->day);
@@ -128,7 +145,7 @@ final readonly class Schedule
 			throw $this->createException($other, 'dayOfWeek');
 		}
 
-		return new Schedule($minute, $hour, $day, $month, $dayOfWeek);
+		return new Schedule($minute, $hour, $day, $month, $dayOfWeek, $this->timezone);
 	}
 
 	private function createException(Schedule $other, string $part): InvalidArgumentException
