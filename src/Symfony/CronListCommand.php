@@ -39,7 +39,7 @@ final class CronListCommand extends Command
 		}
 
 		$table = new Table($output);
-		$table->setHeaders(['Name', 'Schedule', 'Class', 'Command', 'Memory', 'Spot', 'Description']);
+		$table->setHeaders(['Name', 'Schedule', 'Class', 'Command', 'Memory', 'Spot', 'Skip', 'Description']);
 
 		$cronJobs = $cronJobProvider->provide();
 		/**
@@ -79,6 +79,7 @@ final class CronListCommand extends Command
 				$command ?? '-',
 				$memoryLimit ?? '-',
 				$cronJob->spotInstance ? '✓' : '✗',
+				$cronJob->skip ? '✓' : '✗',
 				$displayDescription,
 			]);
 		}

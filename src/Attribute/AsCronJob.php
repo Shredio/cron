@@ -19,6 +19,7 @@ final readonly class AsCronJob
 		Schedule|string|CronExpression $schedule,
 		public ?CronOptions $options = null,
 		public bool $spotInstance = false,
+		public bool $skip = false,
 		?DateTimeZone $timezone = null,
 	)
 	{
