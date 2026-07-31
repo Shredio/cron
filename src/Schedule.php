@@ -105,7 +105,10 @@ final readonly class Schedule
 	 */
 	public function getNext(): ?DateTimeImmutable
 	{
-		$next = $this->expression->getNext(new DatePoint());
+		// The evaluator advances the start date in place and is typed against DateTime, so an
+		// immutable DatePoint always fails with a TypeError - hand it the timestamp instead.
+		// DatePoint keeps the evaluation clock-mockable.
+		$next = $this->expression->getNext(new DatePoint()->getTimestamp());
 		if (is_int($next)) {
 			return new DateTimeImmutable('@' . $next);
 		}
